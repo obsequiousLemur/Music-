@@ -176,18 +176,7 @@ async def pause(ctx):
     else:
         print("Music not playing")
         await ctx.send("Music not playing. Could not Pause.")
-        
-@bot.command(pass_context=True, aliases = ['rewind'])
-async def restart(ctx)
-    voice = get(bot.voice_clients, guild=ctx.guild)
-    if os.path.isfile("song.mp3"):
-        voice.stop()
-        voice.play(discord.FFmpegPCMAudio("song.mp3"))
-        voice.source = discord.PCMVolumeTransformer(voice.source)
-        voice.source.volume = 0.50
-        await ctx.send("Rewinding song!")
-    else:
-        await ctx.send("Nothing to rewind!")
+
 
 # resumes song
 
@@ -266,17 +255,33 @@ async def queue(ctx, url: str):
 
     print("Song added to queue\n")
 
-    @bot.command(pass_context=True, aliases=['next', 'sk', 'n'])
-    async def skip(ctx):
-        voice = get(bot.voice_clients, guild=ctx.guild)
 
-        if voice and voice.is_playing():
-            print('Playing next song.')
-            voice.stop()
-            await ctx.send("Next Song")
-        else:
-            print("No music playing, failed to play next song.")
-            await ctx.send("There was no music to be skipped.")
+@bot.command(pass_context=True, aliases=['next', 'sk', 'n'])
+async def skip(ctx):
+    voice = get(bot.voice_clients, guild=ctx.guild)
+
+    if voice and voice.is_playing():
+        print('Playing next song.')
+        voice.stop()
+        await ctx.send("Next Song")
+    else:
+        print("No music playing, failed to play next song.")
+        await ctx.send("There was no music to be skipped.")
+
+
+@bot.command(pass_context=True, aliases=['rewind'])
+async def restart(ctx):
+    voice = get(bot.voice_clients, guild=ctx.guild)
+    if os.path.isfile("song.mp3"):
+        voice.stop()
+        voice.play(discord.FFmpegPCMAudio("song.mp3"))
+        voice.source = discord.PCMVolumeTransformer(voice.source)
+        voice.source.volume = 0.50
+        print("rewinding song now.")
+        await ctx.send("Rewinding song!")
+    else:
+        print("No song, didn't rewind.")
+        await ctx.send("Nothing to rewind!")
 
 
 @bot.command(pass_context=True, aliases=['a'])
@@ -297,6 +302,8 @@ async def aliases(ctx):
     embed.add_field(name='Aliases for "!invite"', value='"inv, "invi"', inline=False)
     embed.add_field(name='Aliases for "!skip"', value='"nex", "ski", "sk", "n"', inline=False)
     embed.add_field(name='Aliases for "!aliases"', value='"a"', inline=False)
+    embed.add_field(name='Aliases for "!restart"', value='"rewind"', inline=False)
+
     await ctx.send(mention, embed=embed)
     await ctx.send(f"Here are the aliases, {mention}!")
 
@@ -326,6 +333,7 @@ async def help(ctx):
     embed.add_field(name='!invite', value='you can get the invite link for your server', inline=False)
     embed.add_field(name='!skip', value='you can skip the song, and go to the next song in the queue', inline=False)
     embed.add_field(name='!aliases', value='you can view the aliases for each command', inline=False)
+    embed.add_field(name='!restart', value='restarts the song currently playing', inline=False)
 
     await ctx.message.author.send(mention, embed=embed)
     await ctx.send(f"I've sent {mention} a DM informing them of my commands!")
