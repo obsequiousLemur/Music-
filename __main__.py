@@ -185,8 +185,9 @@ async def restart(ctx)
         voice.play(discord.FFmpegPCMAudio("song.mp3"))
         voice.source = discord.PCMVolumeTransformer(voice.source)
         voice.source.volume = 0.50
+        await ctx.send("Rewinding song!")
     else:
-        await ctxsend("Nothing to rewind!")
+        await ctx.send("Nothing to rewind!")
 
 # resumes song
 
