@@ -15,6 +15,7 @@ BOT_PREFIX = '!'
 
 bot = commands.Bot(command_prefix=BOT_PREFIX)
 bot.remove_command("help")
+loopstate = False
 
 queueDictionary = {}
 
@@ -70,6 +71,7 @@ async def play(ctx, url: str):
     def check_queue():
         Queue_infile = os.path.isdir("./Queue")
         if Queue_infile is True:
+            
             DIR = os.path.abspath(os.path.realpath("Queue"))
             length = len(os.listdir(DIR))
             still_q = length - 1
@@ -91,10 +93,13 @@ async def play(ctx, url: str):
                 for file in os.listdir("./"):
                     if file.endswith(".mp3"):
                         os.rename(file, "song.mp3")
-
                 voice.play(discord.FFmpegPCMAudio("song.mp3"), after=lambda e: check_queue())
                 voice.source = discord.PCMVolumeTransformer(voice.source)
                 voice.source.volume = 0.50
+                while(loopstate):
+                    voice.play(discord.FFmpegPCMAudio("song.mp3"), after=lambda e: check_queue())
+                    voice.source = discord.PCMVolumeTransformer(voice.source)
+                    voice.source.volume = 0.50
             else:
                 queueDictionary.clear()
                 return
@@ -330,5 +335,11 @@ async def help(ctx):
     await ctx.message.author.send(mention, embed=embed)
     await ctx.send(f"I've sent {mention} a DM informing them of my commands!")
 
-
+@bot.command(pass_context = True)
+async def loop(ctx):
+    loopstate = not(loopstate)
+    print("Loop state set to " + loopstate)
+    await ctx.send("Looping: `" + loopstate + "`")
+    
+    
 bot.run(token)
