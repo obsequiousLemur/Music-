@@ -176,7 +176,18 @@ async def pause(ctx):
     else:
         print("Music not playing")
         await ctx.send("Music not playing. Could not Pause.")
-
+        
+@bot.command(pass_context=True, aliases = ['rewind'])
+async def restart(ctx)
+    voice = get(bot.voice_clients, guild=ctx.guild)
+    if os.path.isfile("song.mp3"):
+        voice.stop()
+        voice.play(discord.FFmpegPCMAudio("song.mp3"))
+        voice.source = discord.PCMVolumeTransformer(voice.source)
+        voice.source.volume = 0.50
+        await ctx.send("Rewinding song!")
+    else:
+        await ctx.send("Nothing to rewind!")
 
 # resumes song
 
