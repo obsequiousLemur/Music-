@@ -5,10 +5,12 @@ import youtube_dl
 import os
 import shutil
 from os import system
+import discordToken
 
 system("cls")
 
-TOKEN = 'NzI5ODg1NDM1ODU3MjA3Mzg4.XwPkjQ.LHxwFpnggvr6YfzOfWDVRhA7A0U'  # token
+token = discordToken.token
+
 BOT_PREFIX = '!'
 
 bot = commands.Bot(command_prefix=BOT_PREFIX)
@@ -318,4 +320,4 @@ async def help(ctx):
     await ctx.send(f"I've sent {mention} a DM informing them of my commands!")
 
 
-bot.run(TOKEN)
+bot.run(token)
