@@ -34,20 +34,13 @@ async def join(ctx):
     channel = ctx.message.author.voice.channel
     voice = get(bot.voice_clients, guild=ctx.guild)
 
-    if voice and voice.is_connected():
-        await voice.move_to(channel)
-    else:
-        voice = await channel.connect()
+    if voice is not None:
+        return await voice.move_to(channel)
 
-    await voice.disconnect()
+    await channel.connect()
 
-    if voice and voice.is_connected():
-        await voice.move.to(channel)
-    else:
-        voice = await channel.connect()
-        print(f"The bot has connected to {channel}\n")
-
-    await ctx.send(f"Joined {channel}.")
+    print(f"The bot has connected to {channel}\n")
+    await ctx.send(f"Joined {channel}")
 
 
 # leaves the voice channel
@@ -67,11 +60,13 @@ async def leave(ctx):
 
 # plays song
 @bot.command(pass_context=True, aliases=['p', 'pla'])
-async def play(ctx, url: str):
+async def play(ctx, *url: str):
+    global loopstate
+
     def check_queue():
         Queue_infile = os.path.isdir("./Queue")
         if Queue_infile is True:
-            
+
             DIR = os.path.abspath(os.path.realpath("Queue"))
             length = len(os.listdir(DIR))
             still_q = length - 1
@@ -96,10 +91,6 @@ async def play(ctx, url: str):
                 voice.play(discord.FFmpegPCMAudio("song.mp3"), after=lambda e: check_queue())
                 voice.source = discord.PCMVolumeTransformer(voice.source)
                 voice.source.volume = 0.50
-                while(loopstate):
-                    voice.play(discord.FFmpegPCMAudio("song.mp3"), after=lambda e: check_queue())
-                    voice.source = discord.PCMVolumeTransformer(voice.source)
-                    voice.source.volume = 0.50
             else:
                 queueDictionary.clear()
                 return
@@ -133,6 +124,8 @@ async def play(ctx, url: str):
 
     ydl_opts = {
         'format': 'bestaudio/best',
+        'quiet': False,
+        'outtmpl': "./song.mp3",
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
@@ -141,31 +134,30 @@ async def play(ctx, url: str):
         }],
     }
 
+    song_search = " ".join(url)
+
     try:
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             print("Downloading song now.\n")
-            ydl.download([url])
+            ydl.download([f"ytsearch1:{song_search}"])
     except:
         print("FALLBACK: youtube-dl does not support this URL, using Spotify (This is normal if Spotify URL)")
         c_path = os.path.dirname(os.path.realpath(__file__))
-        system("spotdl -f " + '"' + c_path + '"' + " -s " + url)
+        system("spotdl -ff song -f " + '"' + c_path + '"' + " -s " + song_search)
 
     for file in os.listdir("./"):
         if file.endswith(".mp3"):
             name = file
-            print(f"Renamed File:{file}\n")
+            print(f"Renamed File: {file}\n")
             os.rename(file, "song.mp3")
 
     voice.play(discord.FFmpegPCMAudio("song.mp3"), after=lambda e: check_queue())
     voice.source = discord.PCMVolumeTransformer(voice.source)
     voice.source.volume = 0.50
-    try:
-        nname = name.rsplit("-", 2)
-        await ctx.send(f"Playing: {nname[0]}.")
-    except:
-        await ctx.send(f"Playing Song")
 
-    print("Playing.\n")
+    nname = name.rsplit("-", 2)
+    await ctx.send("Playing now.")
+    print("playing\n")
 
 
 # pauses song
@@ -220,7 +212,7 @@ async def stop(ctx):
 
 
 @bot.command(pass_context=True, aliases=['q', 'que'])
-async def queue(ctx, url: str):
+async def queue(ctx, *url: str):
     Queue_infile = os.path.isdir("./Queue")
     if Queue_infile is False:
         os.mkdir("Queue")
@@ -247,16 +239,19 @@ async def queue(ctx, url: str):
 
         }],
     }
+
+    song_search = " ".join(url)
+
     try:
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             print("Downloading audio now\n")
-            ydl.download([url])
+            ydl.download([f"ytsearch1:{song_search}"])
     except:
         print("FALLBACK: youtube-dl does not support this URL, using Spotify (This is normal if spotify URL)")
         q_path = os.path.abspath(os.path.realpath("Queue"))
         system(f"spotdl -ff -f " + '"' + q_path + '"' + " -s " + url)
 
-    await ctx.send("Adding song" + str(q_num) + " to the queue.")
+    await ctx.send("Added song" + str(q_num) + " to the queue.")
 
     print("Song added to queue\n")
 
@@ -274,7 +269,18 @@ async def skip(ctx):
         await ctx.send("There was no music to be skipped.")
 
 
-@bot.command(pass_context=True, aliases=['rewind'])
+@bot.command(pass_context=True, aliases=['v', 'vol'])
+async def volume(ctx, volume: int):
+    if ctx.voice_client is None:
+        return await ctx.send("Not connected to voice channel.")
+
+    print(volume / 100)
+
+    ctx.voice_client.source.volume = volume / 100
+    await ctx.send(f"Changed volume to {volume}%")
+
+
+@bot.command(pass_context=True, aliases=['rewind', 're'])
 async def restart(ctx):
     voice = get(bot.voice_clients, guild=ctx.guild)
     if os.path.isfile("song.mp3"):
@@ -307,7 +313,9 @@ async def aliases(ctx):
     embed.add_field(name='Aliases for "!invite"', value='"inv, "invi"', inline=False)
     embed.add_field(name='Aliases for "!skip"', value='"nex", "ski", "sk", "n"', inline=False)
     embed.add_field(name='Aliases for "!aliases"', value='"a"', inline=False)
-    embed.add_field(name='Aliases for "!restart"', value='"rewind"', inline=False)
+    embed.add_field(name='Aliases for "!restart"', value='"rewind", "re"', inline=False)
+    embed.add_field(name='Aliases for "!loop', value='none', inline=False)
+    embed.add_field(name='Aliases for "!volume"', value='"v", "vol"', inline=False)
 
     await ctx.send(mention, embed=embed)
     await ctx.send(f"Here are the aliases, {mention}!")
@@ -339,15 +347,12 @@ async def help(ctx):
     embed.add_field(name='!skip', value='you can skip the song, and go to the next song in the queue', inline=False)
     embed.add_field(name='!aliases', value='you can view the aliases for each command', inline=False)
     embed.add_field(name='!restart', value='restarts the song currently playing', inline=False)
+    embed.add_field(name='!loop', value='loops currently playing song indefinitely', inline=False)
+    embed.add_field(name='!volume', value='you can increase the volume, by adding a number from 1-100 after the '
+                                          'command. The higher the number the louder the song will play', inline=False)
 
     await ctx.message.author.send(mention, embed=embed)
     await ctx.send(f"I've sent {mention} a DM informing them of my commands!")
 
-@bot.command(pass_context = True)
-async def loop(ctx):
-    loopstate = not(loopstate)
-    print("Loop state set to " + loopstate)
-    await ctx.send("Looping: `" + loopstate + "`")
-    
-    
+
 bot.run(token)
